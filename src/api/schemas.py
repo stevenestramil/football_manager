@@ -27,7 +27,7 @@ class PlayerCreate(BaseModel):
     position: Position
     team_id: int | None = None
 
-    _strip_name = field_validator("name", "city", mode="before")(_strip)
+    _strip_name = field_validator("name", mode="before")(_strip)
 
 class PlayerTeamAssign(BaseModel):
     team_id: int

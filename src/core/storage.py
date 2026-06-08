@@ -7,6 +7,11 @@ class TeamNotEmptyError(Exception):
         self.team_id = team_id
 
 
+class DuplicateTeamNameError(Exception):
+    def __init__(self, name: str):
+        self.name = name
+
+
 class UnknownTeamError(Exception):
     def __init__(self, team_id: int):
         self.team_id = team_id
@@ -25,6 +30,8 @@ class Storage:
         self._player_ids = count(1)
 
     def create_team(self, name: str, city: str, titles: int) -> Team:
+        if any(t.name.lower() == name.lower() for t in self._teams.values()):
+            raise DuplicateTeamNameError(name)
         team_id = next(self._team_ids)
         team = Team(id=team_id, name=name, city=city, titles=titles)
         self._teams[team_id] = team
@@ -37,12 +44,12 @@ class Storage:
         return self._teams.get(team_id)
 
     def delete_team(self, team_id: int) -> None:
-        if team_id in self._teams:
-            if any(p.team_id == team_id for p in self._players.values()):
-                raise TeamNotEmptyError(team_id)
-            del self._teams[team_id]
-        else:
+        team = self._teams.get(team_id)
+        if team is None:
             raise UnknownTeamError(team_id)
+        if team.players:
+            raise TeamNotEmptyError(team_id)
+        del self._teams[team_id]
 
     def get_players(
         self,

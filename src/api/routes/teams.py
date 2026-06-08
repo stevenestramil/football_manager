@@ -1,7 +1,7 @@
 from fastapi import APIRouter, status, HTTPException
 from api.schemas import TeamCreate, TeamRead
 from api.deps import TeamServiceDep
-from core.storage import TeamNotEmptyError, UnknownTeamError
+from core.storage import DuplicateTeamNameError, TeamNotEmptyError, UnknownTeamError
 
 router = APIRouter(prefix="/teams", tags=["teams"])
 
