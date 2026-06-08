@@ -1,16 +1,19 @@
 # src/api/deps.py
-from functools import lru_cache
 from typing import Annotated
 from fastapi import Depends
+from sqlalchemy.orm import Session
 
+from core.db import get_session
 from core.storage import Storage
 from services.player_service import PlayerService
 from services.team_service import TeamService
 
 
-@lru_cache(maxsize=1)
-def get_storage() -> Storage:
-    return Storage()
+SessionDep = Annotated[Session, Depends(get_session)]
+
+
+def get_storage(session: SessionDep) -> Storage:
+    return Storage(session)
 
 
 StorageDep = Annotated[Storage, Depends(get_storage)]

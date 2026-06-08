@@ -1,5 +1,9 @@
 from itertools import count
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session
+
 from core.models import Team, Player, Position
+from core.db_models import TeamORM
 
 
 class TeamNotEmptyError(Exception):
@@ -23,18 +27,23 @@ class UnknownPlayerError(Exception):
 
 
 class Storage:
-    def __init__(self):
+    def __init__(self, session: Session):
+        self.session = session
         self._teams: dict[int, Team] = {}
         self._players: dict[int, Player] = {}
         self._team_ids = count(1)
         self._player_ids = count(1)
 
-    def create_team(self, name: str, city: str, titles: int) -> Team:
-        if any(t.name.lower() == name.lower() for t in self._teams.values()):
+    def create_team(self, name: str, city: str, titles: int) -> TeamORM:
+        existing = self.session.scalar(
+            select(TeamORM).where(func.lower(TeamORM.name) == name.lower())
+        )
+        if existing is not None:
             raise DuplicateTeamNameError(name)
-        team_id = next(self._team_ids)
-        team = Team(id=team_id, name=name, city=city, titles=titles)
-        self._teams[team_id] = team
+        team = TeamORM(name=name, city=city, titles=titles)
+        self.session.add(team)
+        self.session.commit()
+        self.session.refresh(team)
         return team
 
     def get_teams(self) -> list[Team]:
