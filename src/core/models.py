@@ -14,7 +14,6 @@ class Team(BaseModel):
     name: str
     city: str
     titles: int
-    players: list[int] = []
 
 
 class Player(BaseModel):
