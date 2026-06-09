@@ -1,9 +1,19 @@
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from core.models import Position
 
 
 def _strip(v: str) -> str:
     return v.strip() if isinstance(v, str) else v
+
+
+class PlayerRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    age: int
+    position: Position
+    team_id: int | None = None
 
 
 class TeamCreate(BaseModel):
@@ -14,11 +24,15 @@ class TeamCreate(BaseModel):
     _strip_name = field_validator("name", "city", mode="before")(_strip)
 
 
-class TeamRead(BaseModel):
+class TeamSummary(BaseModel):
     id: int
     name: str
     city: str
     titles: int
+
+
+class TeamRead(TeamSummary):
+    players: list[PlayerRead] = []
 
 
 class PlayerCreate(BaseModel):
@@ -28,6 +42,7 @@ class PlayerCreate(BaseModel):
     team_id: int | None = None
 
     _strip_name = field_validator("name", mode="before")(_strip)
+
 
 class PlayerTeamAssign(BaseModel):
     team_id: int

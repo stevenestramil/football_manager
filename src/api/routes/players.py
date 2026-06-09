@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, status
-from api.schemas import PlayerCreate, PlayerTeamAssign
+from api.schemas import PlayerCreate, PlayerRead, PlayerTeamAssign
 from api.deps import PlayerServiceDep
 from core.models import Position
 from core.storage import UnknownPlayerError, UnknownTeamError
@@ -7,7 +7,7 @@ from core.storage import UnknownPlayerError, UnknownTeamError
 router = APIRouter(prefix="/players", tags=["players"])
 
 
-@router.post("", status_code=status.HTTP_201_CREATED)
+@router.post("", status_code=status.HTTP_201_CREATED, response_model=PlayerRead)
 async def create_player(player: PlayerCreate, service: PlayerServiceDep):
     try:
         created = service.create_player(
@@ -18,7 +18,7 @@ async def create_player(player: PlayerCreate, service: PlayerServiceDep):
     return created
 
 
-@router.get("")
+@router.get("", response_model=list[PlayerRead])
 async def get_players(
     service: PlayerServiceDep,
     team_id: int | None = None,
@@ -28,7 +28,7 @@ async def get_players(
     return service.get_players(team_id=team_id, position=position, min_age=min_age)
 
 
-@router.get("/{player_id}")
+@router.get("/{player_id}", response_model=PlayerRead)
 async def get_player(player_id: int, service: PlayerServiceDep):
     player = service.get_player(player_id=player_id)
     if not player:
@@ -36,7 +36,7 @@ async def get_player(player_id: int, service: PlayerServiceDep):
     return player
 
 
-@router.patch("/{player_id}/team")
+@router.patch("/{player_id}/team", response_model=PlayerRead)
 async def add_player_to_team(
     player_id: int, team_assign: PlayerTeamAssign, service: PlayerServiceDep
 ):

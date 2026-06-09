@@ -44,10 +44,9 @@ class Storage:
         return self._teams.get(team_id)
 
     def delete_team(self, team_id: int) -> None:
-        team = self._teams.get(team_id)
-        if team is None:
+        if team_id not in self._teams:
             raise UnknownTeamError(team_id)
-        if team.players:
+        if any(p.team_id == team_id for p in self._players.values()):
             raise TeamNotEmptyError(team_id)
         del self._teams[team_id]
 
@@ -74,8 +73,6 @@ class Storage:
         player_id = next(self._player_ids)
         player = Player(id=player_id, name=name, age=age, position=position, team_id=team_id)
         self._players[player_id] = player
-        if team_id is not None:
-            self._teams[team_id].players.append(player_id)
         return player
 
     def get_player(self, player_id: int) -> Player | None:
@@ -87,25 +84,16 @@ class Storage:
             raise UnknownPlayerError(player_id)
         if team_id not in self._teams:
             raise UnknownTeamError(team_id)
-        if player.team_id is not None:
-            self._teams[player.team_id].players.remove(player_id)
         player.team_id = team_id
-        self._teams[team_id].players.append(player_id)
         return player
 
     def remove_player_from_team(self, player_id: int) -> None:
         player = self._players.get(player_id)
         if not player:
             raise UnknownPlayerError(player_id)
-        if player.team_id is None:
-            return
-        self._teams[player.team_id].players.remove(player_id)
         player.team_id = None
 
     def delete_player(self, player_id: int) -> None:
-        player = self._players.get(player_id)
-        if not player:
+        if player_id not in self._players:
             raise UnknownPlayerError(player_id)
-        if player.team_id is not None:
-            self._teams[player.team_id].players.remove(player_id)
         del self._players[player_id]
