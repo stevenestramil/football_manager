@@ -1,23 +1,23 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import DeclarativeBase, sessionmaker
+from pathlib import Path
 
-DATABASE_URL = "sqlite:///./football.db"
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+from sqlalchemy.orm import DeclarativeBase
 
-engine = create_engine(
+DB_PATH = Path(__file__).resolve().parents[2] / "football.db"
+DATABASE_URL = f"sqlite+aiosqlite:///{DB_PATH}"
+
+engine = create_async_engine(
     DATABASE_URL,
     connect_args={"check_same_thread": False},
 )
 
-SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+SessionLocal = async_sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
 
 class Base(DeclarativeBase):
     pass
 
 
-def get_session():
-    session = SessionLocal()
-    try:
+async def get_session():
+    async with SessionLocal() as session:
         yield session
-    finally:
-        session.close()

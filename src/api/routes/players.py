@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, status
 from api.schemas import PlayerCreate, PlayerRead, PlayerTeamAssign
 from api.deps import PlayerServiceDep
-from core.models import Position
+from core.enums import Position
 from core.storage import UnknownPlayerError, UnknownTeamError
 
 router = APIRouter(prefix="/players", tags=["players"])

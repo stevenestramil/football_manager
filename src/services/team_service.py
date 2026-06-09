@@ -1,18 +1,18 @@
+from core.db_models import TeamORM
 from core.storage import Storage
-from core.models import Team
 
 
 class TeamService:
     def __init__(self, storage: Storage):
         self.storage = storage
 
-    async def create_team(self, name: str, city: str, titles: int) -> Team:
+    async def create_team(self, name: str, city: str, titles: int) -> TeamORM:
         return await self.storage.create_team(name=name, city=city, titles=titles)
 
-    async def get_teams(self) -> list[Team]:
+    async def get_teams(self) -> list[TeamORM]:
         return await self.storage.get_teams()
 
-    async def get_team(self, team_id: int) -> Team | None:
+    async def get_team(self, team_id: int) -> TeamORM | None:
         return await self.storage.get_team(team_id)
 
     async def delete_team(self, team_id: int) -> None:

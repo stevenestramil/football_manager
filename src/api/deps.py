@@ -1,7 +1,7 @@
 # src/api/deps.py
 from typing import Annotated
 from fastapi import Depends
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.db import get_session
 from core.storage import Storage
@@ -9,7 +9,7 @@ from services.player_service import PlayerService
 from services.team_service import TeamService
 
 
-SessionDep = Annotated[Session, Depends(get_session)]
+SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 
 def get_storage(session: SessionDep) -> Storage:

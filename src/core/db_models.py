@@ -2,7 +2,7 @@ from sqlalchemy import ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from core.db import Base
-from core.models import Position
+from core.enums import Position
 
 
 class TeamORM(Base):
