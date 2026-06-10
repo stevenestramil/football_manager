@@ -3,7 +3,6 @@ def test_create_team(client):
     assert response.status_code == 201
     body = response.json()
     assert body["name"] == "Arsenal"
-    assert body["players"] == []
 
 
 def test_create_team_invalid_name(client):

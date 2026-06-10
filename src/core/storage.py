@@ -1,5 +1,9 @@
-from itertools import count
-from core.models import Team, Player, Position
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
+from core.db_models import Player, Team
+from core.enums import Position
 
 
 class TeamNotEmptyError(Exception):
@@ -23,32 +27,43 @@ class UnknownPlayerError(Exception):
 
 
 class Storage:
-    def __init__(self):
-        self._teams: dict[int, Team] = {}
-        self._players: dict[int, Player] = {}
-        self._team_ids = count(1)
-        self._player_ids = count(1)
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
     async def create_team(self, name: str, city: str, titles: int) -> Team:
-        if any(t.name.lower() == name.lower() for t in self._teams.values()):
+        existing = await self.session.scalar(
+            select(Team).where(func.lower(Team.name) == name.lower())
+        )
+        if existing is not None:
             raise DuplicateTeamNameError(name)
-        team_id = next(self._team_ids)
-        team = Team(id=team_id, name=name, city=city, titles=titles)
-        self._teams[team_id] = team
+        team = Team(name=name, city=city, titles=titles)
+        self.session.add(team)
+        await self.session.commit()
+        await self.session.refresh(team)
         return team
 
     async def get_teams(self) -> list[Team]:
-        return list(self._teams.values())
+        result = await self.session.scalars(select(Team))
+        return list(result)
 
     async def get_team(self, team_id: int) -> Team | None:
-        return self._teams.get(team_id)
+        return await self.session.scalar(
+            select(Team)
+            .where(Team.id == team_id)
+            .options(selectinload(Team.players))
+        )
 
     async def delete_team(self, team_id: int) -> None:
-        if team_id not in self._teams:
+        team = await self.session.get(Team, team_id)
+        if team is None:
             raise UnknownTeamError(team_id)
-        if any(p.team_id == team_id for p in self._players.values()):
+        has_players = await self.session.scalar(
+            select(Player.id).where(Player.team_id == team_id).limit(1)
+        )
+        if has_players:
             raise TeamNotEmptyError(team_id)
-        del self._teams[team_id]
+        await self.session.delete(team)
+        await self.session.commit()
 
     async def get_players(
         self,
@@ -56,44 +71,54 @@ class Storage:
         position: Position | None = None,
         min_age: int | None = None,
     ) -> list[Player]:
-        players = self._players.values()
+        query = select(Player)
         if team_id is not None:
-            players = filter(lambda p: p.team_id == team_id, players)
+            query = query.where(Player.team_id == team_id)
         if position is not None:
-            players = filter(lambda p: p.position == position, players)
+            query = query.where(Player.position == position)
         if min_age is not None:
-            players = filter(lambda p: p.age >= min_age, players)
-        return list(players)
+            query = query.where(Player.age >= min_age)
+        result = await self.session.scalars(query)
+        return list(result)
 
     async def create_player(
         self, name: str, age: int, position: Position, team_id: int | None = None
     ) -> Player:
-        if team_id is not None and team_id not in self._teams:
-            raise UnknownTeamError(team_id)
-        player_id = next(self._player_ids)
-        player = Player(id=player_id, name=name, age=age, position=position, team_id=team_id)
-        self._players[player_id] = player
+        if team_id is not None:
+            team = await self.session.get(Team, team_id)
+            if team is None:
+                raise UnknownTeamError(team_id)
+        player = Player(name=name, age=age, position=position, team_id=team_id)
+        self.session.add(player)
+        await self.session.commit()
+        await self.session.refresh(player)
         return player
 
     async def get_player(self, player_id: int) -> Player | None:
-        return self._players.get(player_id)
+        return await self.session.get(Player, player_id)
 
     async def add_player_to_team(self, player_id: int, team_id: int) -> Player:
-        player = self._players.get(player_id)
-        if not player:
+        player = await self.session.get(Player, player_id)
+        if player is None:
             raise UnknownPlayerError(player_id)
-        if team_id not in self._teams:
+        team = await self.session.get(Team, team_id)
+        if team is None:
             raise UnknownTeamError(team_id)
         player.team_id = team_id
+        await self.session.commit()
+        await self.session.refresh(player)
         return player
 
     async def remove_player_from_team(self, player_id: int) -> None:
-        player = self._players.get(player_id)
-        if not player:
+        player = await self.session.get(Player, player_id)
+        if player is None:
             raise UnknownPlayerError(player_id)
         player.team_id = None
+        await self.session.commit()
 
     async def delete_player(self, player_id: int) -> None:
-        if player_id not in self._players:
+        player = await self.session.get(Player, player_id)
+        if player is None:
             raise UnknownPlayerError(player_id)
-        del self._players[player_id]
+        await self.session.delete(player)
+        await self.session.commit()

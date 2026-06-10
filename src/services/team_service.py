@@ -1,5 +1,5 @@
+from core.db_models import Team
 from core.storage import Storage
-from core.models import Team
 
 
 class TeamService:

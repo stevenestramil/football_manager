@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-from core.models import Position
+from core.enums import Position
 
 
 def _strip(v: str) -> str:
@@ -25,6 +25,8 @@ class TeamCreate(BaseModel):
 
 
 class TeamSummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     name: str
     city: str

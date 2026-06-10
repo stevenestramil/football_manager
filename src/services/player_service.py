@@ -1,5 +1,6 @@
+from core.db_models import Player
+from core.enums import Position
 from core.storage import Storage
-from core.models import Player, Position
 
 
 class PlayerService:
