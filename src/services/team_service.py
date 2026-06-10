@@ -1,4 +1,4 @@
-from core.db_models import TeamORM
+from core.db_models import Team
 from core.storage import Storage
 
 
@@ -6,13 +6,13 @@ class TeamService:
     def __init__(self, storage: Storage):
         self.storage = storage
 
-    async def create_team(self, name: str, city: str, titles: int) -> TeamORM:
+    async def create_team(self, name: str, city: str, titles: int) -> Team:
         return await self.storage.create_team(name=name, city=city, titles=titles)
 
-    async def get_teams(self) -> list[TeamORM]:
+    async def get_teams(self) -> list[Team]:
         return await self.storage.get_teams()
 
-    async def get_team(self, team_id: int) -> TeamORM | None:
+    async def get_team(self, team_id: int) -> Team | None:
         return await self.storage.get_team(team_id)
 
     async def delete_team(self, team_id: int) -> None:
